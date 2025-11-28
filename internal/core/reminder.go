@@ -3,9 +3,10 @@ package core
 import "time"
 
 type Reminder struct {
-	ID        string    `json:"id"`
-	Message   string    `json:"message"`
-	RemindAt  time.Time `json:"remind_at"`
+	ID       string    `json:"id"`
+	Message  string    `json:"message"`
+	RemindAt time.Time `json:"remind_at"`
+	Email    string    `json:"email"`
 }
 
 type ReminderRepo interface {

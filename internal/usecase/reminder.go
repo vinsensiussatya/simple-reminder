@@ -26,7 +26,7 @@ func (u *ReminderUsecase) Delete(id string) error {
 	return u.repo.Delete(id)
 }
 
-func (u *ReminderUsecase) Update(id, message string, remindAt time.Time) error {
+func (u *ReminderUsecase) Update(id, message string, remindAt time.Time, email string) error {
 	list, err := u.repo.List()
 	if err != nil {
 		return err
@@ -43,5 +43,6 @@ func (u *ReminderUsecase) Update(id, message string, remindAt time.Time) error {
 	}
 	target.Message = message
 	target.RemindAt = remindAt
+	target.Email = email
 	return u.repo.Save(target)
 }

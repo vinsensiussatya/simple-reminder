@@ -52,6 +52,7 @@ func (h *ReminderHandler) Router() http.Handler {
 type addReq struct {
 	Message  string    `json:"message"`
 	RemindAt time.Time `json:"remind_at"`
+	Email    string    `json:"email"`
 }
 
 func (h *ReminderHandler) addReminder(w http.ResponseWriter, r *http.Request) {
@@ -64,6 +65,7 @@ func (h *ReminderHandler) addReminder(w http.ResponseWriter, r *http.Request) {
 		ID:       uuid.NewString(),
 		Message:  req.Message,
 		RemindAt: req.RemindAt,
+		Email:    req.Email,
 	}
 	if err := h.uc.Add(rem); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -99,12 +101,13 @@ func (h *ReminderHandler) updateReminder(w http.ResponseWriter, r *http.Request)
 	var req struct {
 		Message  string    `json:"message"`
 		RemindAt time.Time `json:"remind_at"`
+		Email    string    `json:"email"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	if err := h.uc.Update(id, req.Message, req.RemindAt); err != nil {
+	if err := h.uc.Update(id, req.Message, req.RemindAt, req.Email); err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}

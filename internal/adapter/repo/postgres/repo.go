@@ -31,13 +31,13 @@ func (r *ReminderRepo) Ping(ctx context.Context) error {
 
 func (r *ReminderRepo) Save(rem *core.Reminder) error {
 	_, err := r.conn.Exec(context.Background(),
-		"INSERT INTO reminders (id, message, remind_at) VALUES ($1, $2, $3) ON CONFLICT (id) DO UPDATE SET message=$2, remind_at=$3",
-		rem.ID, rem.Message, rem.RemindAt)
+		"INSERT INTO reminders (id, message, remind_at, email) VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO UPDATE SET message=$2, remind_at=$3, email=$4",
+		rem.ID, rem.Message, rem.RemindAt, rem.Email)
 	return err
 }
 
 func (r *ReminderRepo) List() ([]*core.Reminder, error) {
-	rows, err := r.conn.Query(context.Background(), "SELECT id, message, remind_at FROM reminders")
+	rows, err := r.conn.Query(context.Background(), "SELECT id, message, remind_at, COALESCE(email, '') FROM reminders")
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +46,7 @@ func (r *ReminderRepo) List() ([]*core.Reminder, error) {
 	reminders := []*core.Reminder{}
 	for rows.Next() {
 		var rem core.Reminder
-		if err := rows.Scan(&rem.ID, &rem.Message, &rem.RemindAt); err != nil {
+		if err := rows.Scan(&rem.ID, &rem.Message, &rem.RemindAt, &rem.Email); err != nil {
 			return nil, err
 		}
 		reminders = append(reminders, &rem)
