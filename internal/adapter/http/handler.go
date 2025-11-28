@@ -20,12 +20,12 @@ func NewReminderHandler(uc *usecase.ReminderUsecase) *ReminderHandler {
 
 func (h *ReminderHandler) Router() *mux.Router {
 	r := mux.NewRouter()
-	// Serve frontend static files
-	r.PathPrefix("/").Handler(http.FileServer(http.Dir("internal/adapter/http/static")))
-	// API endpoints
+	// API endpoints first!
 	r.HandleFunc("/reminders", h.addReminder).Methods("POST")
 	r.HandleFunc("/reminders", h.listReminders).Methods("GET")
 	r.HandleFunc("/reminders/{id}", h.deleteReminder).Methods("DELETE")
+	// Then serve frontend static files for everything else
+	r.PathPrefix("/").Handler(http.FileServer(http.Dir("internal/adapter/http/static")))
 	return r
 }
 
