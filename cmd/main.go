@@ -4,7 +4,7 @@ import (
 	"log"
 	"net/http"
 
-	"simple-reminder/internal/adapter/http"
+	reminderhttp "simple-reminder/internal/adapter/http"
 	"simple-reminder/internal/adapter/repo/mem"
 	"simple-reminder/internal/usecase"
 )
@@ -12,7 +12,7 @@ import (
 func main() {
 	repo := mem.NewReminderRepo()
 	uc := usecase.NewReminderUsecase(repo)
-	handler := http.NewReminderHandler(uc)
+	handler := reminderhttp.NewReminderHandler(uc)
 
 	r := handler.Router()
 	log.Println("Listening on :8080...")
