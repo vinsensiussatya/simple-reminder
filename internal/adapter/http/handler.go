@@ -8,6 +8,7 @@ import (
 	"simple-reminder/internal/core"
 	"simple-reminder/internal/usecase"
 	"github.com/google/uuid"
+	"os"
 )
 
 type ReminderHandler struct {
@@ -18,16 +19,31 @@ func NewReminderHandler(uc *usecase.ReminderUsecase) *ReminderHandler {
 	return &ReminderHandler{uc: uc}
 }
 
+func basicAuthMiddleware(next http.Handler) http.Handler {
+	user := os.Getenv("BASIC_AUTH_USER")
+	pass := os.Getenv("BASIC_AUTH_PASS")
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		u, p, ok := r.BasicAuth()
+		if !ok || u != user || p != pass {
+			w.Header().Set("WWW-Authenticate", `Basic realm="Restricted", charset="UTF-8"`)
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Write([]byte("Unauthorized\n"))
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
 func (h *ReminderHandler) Router() *mux.Router {
 	r := mux.NewRouter()
 	// API endpoints first!
 	r.HandleFunc("/reminders", h.addReminder).Methods("POST")
 	r.HandleFunc("/reminders", h.listReminders).Methods("GET")
-	r.HandleFunc("/reminders/{id}", h.deleteReminder).Methods("DELETE")
 	r.HandleFunc("/reminders/{id}", h.updateReminder).Methods("PUT")
-	// Then serve frontend static files for everything else
+	r.HandleFunc("/reminders/{id}", h.deleteReminder).Methods("DELETE")
+	// Serve frontend static files for everything else
 	r.PathPrefix("/").Handler(http.FileServer(http.Dir("internal/adapter/http/static")))
-	return r
+	return r.Use(basicAuthMiddleware)
 }
 
 type addReq struct {
