@@ -25,6 +25,10 @@ func NewReminderRepo(ctx context.Context) (*ReminderRepo, error) {
 	return &ReminderRepo{conn: conn}, nil
 }
 
+func (r *ReminderRepo) Ping(ctx context.Context) error {
+	return r.conn.Ping(ctx)
+}
+
 func (r *ReminderRepo) Save(rem *core.Reminder) error {
 	_, err := r.conn.Exec(context.Background(),
 		"INSERT INTO reminders (id, message, remind_at) VALUES ($1, $2, $3) ON CONFLICT (id) DO UPDATE SET message=$2, remind_at=$3",

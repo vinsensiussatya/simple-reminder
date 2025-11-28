@@ -10,8 +10,8 @@ import (
 	reminderhttp "simple-reminder/internal/adapter/http"
 	"simple-reminder/internal/adapter/repo/mem"
 	pgrepo "simple-reminder/internal/adapter/repo/postgres"
-	"simple-reminder/internal/usecase"
 	"simple-reminder/internal/core"
+	"simple-reminder/internal/usecase"
 )
 
 func main() {
@@ -23,6 +23,9 @@ func main() {
 		pgRepo, err := pgrepo.NewReminderRepo(ctx)
 		if err != nil {
 			log.Fatalf("failed to connect to Postgres: %v", err)
+		}
+		if err := pgRepo.Ping(ctx); err != nil {
+			log.Fatalf("database connection healthy check failed: %v", err)
 		}
 		repo = pgRepo
 		log.Println("Using Postgres repository")
