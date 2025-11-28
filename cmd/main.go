@@ -19,7 +19,6 @@ func main() {
 	var repo core.ReminderRepo
 
 	dbURL := os.Getenv("DB_URL")
-	log.Printf("DEBUG: DB_URL is: '%s'", dbURL)
 	if dbURL != "" && (strings.HasPrefix(dbURL, "postgres://") || strings.HasPrefix(dbURL, "postgresql://")) {
 		ctx := context.Background()
 		pgRepo, err := pgrepo.NewReminderRepo(ctx)

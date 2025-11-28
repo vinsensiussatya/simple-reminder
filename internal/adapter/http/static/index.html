@@ -8,6 +8,12 @@
         table { border-collapse: collapse; margin-top: 20px; }
         th, td { border: 1px solid #aaa; padding: 4px 10px; text-align: left; }
         th { background: #eee; }
+        form { margin-top: 30px; }
+        .delete-btn { color: red; cursor: pointer; border: none; background: none; }
+        .edit-btn { color: #2266dd; cursor: pointer; border: none; background: none; margin-right: 5px; }
+        #edit-popup { display: none; position: fixed; left: 50%; top: 40%; transform: translate(-50%,-50%); background: #fff; border: 1px solid #ccc; padding: 22px; box-shadow: 0 6px 20px rgba(0,0,0,0.07); z-index: 1000; }
+        #edit-popup input { margin: 0 6px 0 0; }
+        #edit-popup .popup-close { float: right; margin-left: 12px; cursor: pointer; color: #999; }
     </style>
 </head>
 <body>
@@ -18,12 +24,41 @@
                 <th>ID</th>
                 <th>Message</th>
                 <th>Remind At</th>
+                <th>Edit</th>
+                <th>Delete</th>
             </tr>
         </thead>
-        <tbody>
-        </tbody>
+        <tbody></tbody>
     </table>
+
+    <form id="add-reminder-form">
+        <h2>Add Reminder</h2>
+        <input type="text" id="message" placeholder="Message" required>
+        <input type="datetime-local" id="remind_at" required>
+        <button type="submit">Add Reminder</button>
+    </form>
+
+    <div id="edit-popup">
+        <span class="popup-close" onclick="hideEditPopup()">&#10005;</span>
+        <h3>Edit Reminder</h3>
+        <form id="edit-reminder-form">
+            <input type="hidden" id="edit_id">
+            <label>Message:
+                <input type="text" id="edit_message" required>
+            </label>
+            <label>Remind At:
+                <input type="datetime-local" id="edit_remind_at" required>
+            </label>
+            <button type="submit">Save</button>
+        </form>
+    </div>
+
 <script>
+function isoToLocal(iso) {
+    const d = new Date(iso);
+    // "YYYY-MM-DDTHH:MM" string for datetime-local input
+    return d.toISOString().slice(0,16);
+}
 async function fetchReminders() {
     const res = await fetch('/reminders');
     const data = await res.json();
@@ -31,11 +66,70 @@ async function fetchReminders() {
     tbody.innerHTML = '';
     data.forEach(rem => {
         const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${rem.id}</td><td>${rem.message}</td><td>${rem.remind_at}</td>`;
+        tr.innerHTML = `<td>${rem.id}</td>`+
+          `<td>${rem.message}</td>`+
+          `<td>${rem.remind_at.replace('T',' ').replace('Z','')}</td>`+
+          `<td><button class='edit-btn' data-id='${rem.id}' data-message='${encodeURIComponent(rem.message)}' data-remind='${rem.remind_at}' title='Edit'>&#9998;</button></td>`+
+          `<td><button class='delete-btn' data-id='${rem.id}' title='Delete'>&#10006;</button></td>`;
         tbody.appendChild(tr);
+    });
+    document.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.onclick = async (e) => {
+            const id = btn.getAttribute('data-id');
+            await fetch(`/reminders/${id}`, { method: 'DELETE' });
+            fetchReminders();
+        }
+    });
+    document.querySelectorAll('.edit-btn').forEach(btn => {
+        btn.onclick = function(e) {
+            const id = btn.getAttribute('data-id');
+            const msg = decodeURIComponent(btn.getAttribute('data-message'));
+            const remindAt = btn.getAttribute('data-remind');
+            showEditPopup(id, msg, remindAt);
+        }
     });
 }
 fetchReminders();
+
+document.getElementById('add-reminder-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const message = document.getElementById('message').value;
+    const remindAt = document.getElementById('remind_at').value;
+    if (!message || !remindAt) return;
+    // Remind at to ISO for API
+    const body = JSON.stringify({ message: message, remind_at: new Date(remindAt).toISOString() });
+    await fetch('/reminders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body
+    });
+    this.reset();
+    fetchReminders();
+});
+
+function showEditPopup(id, message, remindAt) {
+    document.getElementById('edit_id').value = id;
+    document.getElementById('edit_message').value = message;
+    document.getElementById('edit_remind_at').value = isoToLocal(remindAt);
+    document.getElementById('edit-popup').style.display = 'block';
+}
+function hideEditPopup() {
+    document.getElementById('edit-popup').style.display = 'none';
+}
+document.getElementById('edit-reminder-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const id = document.getElementById('edit_id').value;
+    const message = document.getElementById('edit_message').value;
+    const remindAt = document.getElementById('edit_remind_at').value;
+    if (!id || !message || !remindAt) return;
+    await fetch(`/reminders/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message, remind_at: new Date(remindAt).toISOString() })
+    });
+    hideEditPopup();
+    fetchReminders();
+});
 </script>
 </body>
 </html>

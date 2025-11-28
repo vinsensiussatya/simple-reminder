@@ -1,7 +1,9 @@
 package usecase
 
 import (
+	"fmt"
 	"simple-reminder/internal/core"
+	"time"
 )
 
 type ReminderUsecase struct {
@@ -22,4 +24,24 @@ func (u *ReminderUsecase) List() ([]*core.Reminder, error) {
 
 func (u *ReminderUsecase) Delete(id string) error {
 	return u.repo.Delete(id)
+}
+
+func (u *ReminderUsecase) Update(id, message string, remindAt time.Time) error {
+	list, err := u.repo.List()
+	if err != nil {
+		return err
+	}
+	var target *core.Reminder
+	for _, rem := range list {
+		if rem.ID == id {
+			target = rem
+			break
+		}
+	}
+	if target == nil {
+		return fmt.Errorf("reminder not found")
+	}
+	target.Message = message
+	target.RemindAt = remindAt
+	return u.repo.Save(target)
 }

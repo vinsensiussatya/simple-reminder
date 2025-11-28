@@ -24,6 +24,7 @@ func (h *ReminderHandler) Router() *mux.Router {
 	r.HandleFunc("/reminders", h.addReminder).Methods("POST")
 	r.HandleFunc("/reminders", h.listReminders).Methods("GET")
 	r.HandleFunc("/reminders/{id}", h.deleteReminder).Methods("DELETE")
+	r.HandleFunc("/reminders/{id}", h.updateReminder).Methods("PUT")
 	// Then serve frontend static files for everything else
 	r.PathPrefix("/").Handler(http.FileServer(http.Dir("internal/adapter/http/static")))
 	return r
@@ -67,6 +68,24 @@ func (h *ReminderHandler) deleteReminder(w http.ResponseWriter, r *http.Request)
 	vars := mux.Vars(r)
 	id := vars["id"]
 	if err := h.uc.Delete(id); err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *ReminderHandler) updateReminder(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+	var req struct {
+		Message  string    `json:"message"`
+		RemindAt time.Time `json:"remind_at"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if err := h.uc.Update(id, req.Message, req.RemindAt); err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
