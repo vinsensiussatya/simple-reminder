@@ -3,12 +3,13 @@ package http
 import (
 	"encoding/json"
 	"net/http"
-	"time"
-	"github.com/gorilla/mux"
+	"os"
 	"simple-reminder/internal/core"
 	"simple-reminder/internal/usecase"
+	"time"
+
 	"github.com/google/uuid"
-	"os"
+	"github.com/gorilla/mux"
 )
 
 type ReminderHandler struct {
@@ -34,7 +35,7 @@ func basicAuthMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func (h *ReminderHandler) Router() *mux.Router {
+func (h *ReminderHandler) Router() http.Handler {
 	r := mux.NewRouter()
 	// API endpoints first!
 	r.HandleFunc("/reminders", h.addReminder).Methods("POST")
@@ -43,7 +44,9 @@ func (h *ReminderHandler) Router() *mux.Router {
 	r.HandleFunc("/reminders/{id}", h.deleteReminder).Methods("DELETE")
 	// Serve frontend static files for everything else
 	r.PathPrefix("/").Handler(http.FileServer(http.Dir("internal/adapter/http/static")))
-	return r.Use(basicAuthMiddleware)
+
+	// Apply middleware by wrapping the router
+	return basicAuthMiddleware(r)
 }
 
 type addReq struct {
@@ -58,8 +61,8 @@ func (h *ReminderHandler) addReminder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	rem := &core.Reminder{
-		ID: uuid.NewString(),
-		Message: req.Message,
+		ID:       uuid.NewString(),
+		Message:  req.Message,
 		RemindAt: req.RemindAt,
 	}
 	if err := h.uc.Add(rem); err != nil {
