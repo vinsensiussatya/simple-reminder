@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	reminderhttp "simple-reminder/internal/adapter/http"
 	"simple-reminder/internal/adapter/repo/mem"
@@ -19,7 +20,7 @@ func main() {
 
 	dbURL := os.Getenv("DB_URL")
 	log.Printf("DEBUG: DB_URL is: '%s'", dbURL)
-	if dbURL != "" && len(dbURL) >= 11 && dbURL[:11] == "postgres://" {
+	if dbURL != "" && (strings.HasPrefix(dbURL, "postgres://") || strings.HasPrefix(dbURL, "postgresql://")) {
 		ctx := context.Background()
 		pgRepo, err := pgrepo.NewReminderRepo(ctx)
 		if err != nil {
